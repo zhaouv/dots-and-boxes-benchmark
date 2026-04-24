@@ -45,7 +45,7 @@ copy_artifacts() {
         cp "${WORKDIR}/REPORT.md" "${ARTIFACT_DIR}/REPORT.md"
     fi
 
-    git -C "${WORKDIR}" diff --binary > "${ARTIFACT_DIR}/git.diff" || true
+    git -C "${WORKDIR}" diff --binary > "${ARTIFACT_DIR}/git.diff" 2>/dev/null || true
 
     if [ -f "${TMP_DIR}/visible_eval.txt" ]; then
         cp "${TMP_DIR}/visible_eval.txt" "${ARTIFACT_DIR}/visible_eval.txt"

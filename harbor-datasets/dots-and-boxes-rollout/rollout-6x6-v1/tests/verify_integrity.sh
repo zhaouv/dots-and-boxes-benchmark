@@ -2,13 +2,17 @@
 set -euo pipefail
 
 WORKDIR="${1:-/app}"
+BASELINE_DIR="${2:-${BASELINE_DIR:-/opt/dots-and-boxes-visible}}"
 
-if [ ! -d "${WORKDIR}/.git" ]; then
-    echo "missing git repo: ${WORKDIR}" >&2
+if [ ! -d "${WORKDIR}" ]; then
+    echo "missing workspace: ${WORKDIR}" >&2
     exit 1
 fi
 
-cd "${WORKDIR}"
+if [ ! -d "${BASELINE_DIR}" ]; then
+    echo "missing baseline workspace: ${BASELINE_DIR}" >&2
+    exit 1
+fi
 
 PROTECTED_FILES=(
     "aivsai.js"
@@ -20,12 +24,17 @@ PROTECTED_FILES=(
 modified=()
 
 for file in "${PROTECTED_FILES[@]}"; do
-    if [ ! -f "${file}" ]; then
+    if [ ! -f "${WORKDIR}/${file}" ]; then
         modified+=("${file} (missing)")
         continue
     fi
 
-    if ! git diff --quiet HEAD -- "${file}"; then
+    if [ ! -f "${BASELINE_DIR}/${file}" ]; then
+        modified+=("${file} (missing baseline)")
+        continue
+    fi
+
+    if ! cmp -s "${WORKDIR}/${file}" "${BASELINE_DIR}/${file}"; then
         modified+=("${file}")
     fi
 done

@@ -67,6 +67,13 @@ harbor-datasets/
       environment/
         Dockerfile
         setup_visible_repo.sh
+        workspace/
+          README.md
+          game.js
+          gamedata.js
+          player.js
+          rolloutAI.js
+          aivsai.js
       fixtures/
         workspace/
           README.md
@@ -89,6 +96,7 @@ scripts/
 ### 说明
 
 - `fixtures/workspace/` 是从当前 `game/` 目录拷出来的**可见版本**。
+- `environment/workspace/` 是同一份可见工作区在 Docker build context 下的副本，因为 Harbor 的 Docker build context 固定为 `environment/`。
 - Harbor 运行时，`fixtures/workspace/` 会被铺到 `/app` 根目录，也就是 agent 看到的是 `aivsai.js`、`rolloutAI.js` 这类平铺文件。
 - 明确排除：`*.bench.js`。
 - `solution/solve.sh` 可选，但建议保留，方便用 oracle agent 验证任务本身可做。
@@ -109,7 +117,7 @@ scripts/
    - `git config user.name benchmark`
    - `git add .`
    - `git commit -m init`
-3. 保留初始 git 提交，供 verifier 以基线 diff 校验受保护文件。
+3. 保留初始 git 提交，供 agent 查看改动；verifier 对受保护文件使用镜像内只读基线副本做完整性校验。
 
 ### 5.2 受保护文件
 
@@ -130,7 +138,7 @@ scripts/
 - 任何 `*.bench.js`
 - verifier 相关脚本
 
-verifier 应对这些受保护文件做基于初始提交的完整性校验；如果被修改，直接记 0 分。
+verifier 应对这些受保护文件做基于镜像内只读基线副本的完整性校验；如果被修改，直接记 0 分。
 
 ## 6. 给 agent 的指令设计
 
@@ -359,14 +367,17 @@ tags = ["javascript", "search", "simulation", "game-ai"]
 
 [agent]
 timeout_sec = 1800
+user = "root"
 
 [verifier]
 timeout_sec = 600
+user = "root"
 
 [environment]
 cpus = 2
 memory_mb = 4096
 storage_mb = 4096
+allow_internet = true
 ```
 
 这里的逻辑是：
@@ -374,6 +385,8 @@ storage_mb = 4096
 - agent 30 分钟内完成任务
 - verifier 10 分钟内完成评分
 - CPU 固定，便于比较时间
+- 当前 Harbor task 允许联网，避免内置 `codex` agent 在容器内安装依赖时直接失败
+- `agent` / `verifier` 默认用 `root`，优先保证 Harbor bind mount 的日志目录可写
 
 ## 12. 建议的环境镜像
 

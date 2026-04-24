@@ -8,8 +8,8 @@ RUN useradd -m -s /bin/bash agent
 
 WORKDIR /app
 
-COPY environment/setup_visible_repo.sh /usr/local/bin/setup_visible_repo.sh
-COPY fixtures/workspace/ /opt/dots-and-boxes-visible/
+COPY setup_visible_repo.sh /usr/local/bin/setup_visible_repo.sh
+COPY workspace/ /opt/dots-and-boxes-visible/
 
 RUN chmod +x /usr/local/bin/setup_visible_repo.sh \
     && /usr/local/bin/setup_visible_repo.sh /opt/dots-and-boxes-visible /app agent
