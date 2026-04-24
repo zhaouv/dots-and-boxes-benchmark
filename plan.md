@@ -2,6 +2,10 @@
 
 本计划基于 `BENCHMARK_DESIGN.md`，用于指导该仓库后续落地 Harbor benchmark。
 
+当前 task 路径：
+
+- `harbor-datasets/dots-and-boxes-rollout/rollout-6x6-v1`
+
 ## 目标
 
 - 把当前 `game/` 资产整理成一个可运行的 Harbor benchmark。
@@ -17,7 +21,7 @@
    - 初始化 git 仓库
    - 提交初始版本
 4. 编写 `instruction.md`：
-   - 明确实现目标是 `game/rolloutAI.js`
+   - 明确实现目标是 `rolloutAI.js`
    - 明确公开门槛：`ro vs ok`、`ro vs gr`、运行时间
    - 明确不允许修改规则层和 runner
 5. 编写 verifier：

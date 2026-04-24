@@ -68,7 +68,7 @@ harbor-datasets/
         Dockerfile
         setup_visible_repo.sh
       fixtures/
-        game-visible/
+        workspace/
           README.md
           game.js
           gamedata.js
@@ -77,21 +77,22 @@ harbor-datasets/
           aivsai.js
       solution/
         solve.sh
+        rolloutAI.solution.js
       tests/
         test.sh
         parse_results.js
         verify_integrity.sh
-        hidden/
-          rolloutAI.bench.js
-          aivsai.bench.js
+scripts/
+  export_hidden_env.sh
 ```
 
 ### 说明
 
-- `fixtures/game-visible/` 是从当前 `game/` 目录拷出来的**可见版本**。
+- `fixtures/workspace/` 是从当前 `game/` 目录拷出来的**可见版本**。
+- Harbor 运行时，`fixtures/workspace/` 会被铺到 `/app` 根目录，也就是 agent 看到的是 `aivsai.js`、`rolloutAI.js` 这类平铺文件。
 - 明确排除：`*.bench.js`。
 - `solution/solve.sh` 可选，但建议保留，方便用 oracle agent 验证任务本身可做。
-- `tests/hidden/` 里是隐藏评分资产。
+- 隐藏评分资产不直接放进 task 源目录，而是通过 verifier 环境变量注入。
 
 ## 5. 工作区初始化流程
 
@@ -101,14 +102,14 @@ harbor-datasets/
 
 建议在环境启动后执行如下逻辑：
 
-1. 将 `fixtures/game-visible/*` 复制到 `/app/`。
+1. 将 `fixtures/workspace/*` 复制到 `/app/`。
 2. 执行：
    - `git init`
    - `git config user.email benchmark@local`
    - `git config user.name benchmark`
    - `git add .`
    - `git commit -m init`
-3. 生成受保护文件的 hash 清单，供 verifier 校验。
+3. 保留初始 git 提交，供 verifier 以基线 diff 校验受保护文件。
 
 ### 5.2 受保护文件
 
@@ -116,20 +117,20 @@ harbor-datasets/
 
 建议默认只允许 agent 修改：
 
-- `game/rolloutAI.js`
+- `rolloutAI.js`
 - `REPORT.md`（如果你希望 agent 交总结）
 - 你显式允许的 scratch 文件
 
 建议禁止修改：
 
-- `game/aivsai.js`
-- `game/game.js`
-- `game/gamedata.js`
-- `game/player.js`
+- `aivsai.js`
+- `game.js`
+- `gamedata.js`
+- `player.js`
 - 任何 `*.bench.js`
 - verifier 相关脚本
 
-verifier 应对这些受保护文件做 hash 校验；如果被修改，直接记 0 分。
+verifier 应对这些受保护文件做基于初始提交的完整性校验；如果被修改，直接记 0 分。
 
 ## 6. 给 agent 的指令设计
 
@@ -137,7 +138,7 @@ verifier 应对这些受保护文件做 hash 校验；如果被修改，直接�
 
 ### 建议包含的信息
 
-1. 你需要实现 `game/rolloutAI.js` 中的 `RolloutAI`。
+1. 你需要实现 `rolloutAI.js` 中的 `RolloutAI`。
 2. 你可以阅读代码、运行对战、修改实现。
 3. 你的目标是让：
    - `ro vs ok` 胜率达到 70%+
@@ -162,7 +163,7 @@ verifier 应对这些受保护文件做 hash 校验；如果被修改，直接�
 ### 阶段 A：完整性校验
 
 - 检查受保护文件是否被改动。
-- 检查 agent 是否真的产出了 `game/rolloutAI.js` 的有效实现。
+- 检查 agent 是否真的产出了 `rolloutAI.js` 的有效实现。
 - 检查 `node aivsai.js ...` 能正常运行。
 
 失败则直接 0 分。
@@ -193,7 +194,7 @@ node aivsai.js -1 ro -2 gr -n 50 -s --seed gate-gr-v1
 
 只有通过阶段 B，才进入隐藏评分：
 
-1. 把隐藏 bench 文件注入工作区。
+1. verifier 从外部环境变量注入隐藏 bench 文件到临时评测目录。
 2. 运行：
 
 ```bash
@@ -321,13 +322,13 @@ score = avg(br_winrate over 5 hidden seeds)
 
 因此我建议分两档：
 
-- **最小实现**：先放在 `tests/hidden/`，快速打通流程。
-- **正式版**：把隐藏 bench 资产改成 verifier-only 注入，不在 agent 可见文件系统中明文存在。
+- **最小实现**：通过 `verifier.env` 注入 base64 编码的 bench 文件。
+- **正式版**：继续沿用 verifier-only 注入，或升级为宿主机挂载的只读私有目录。
 
 正式版可以通过以下方式做：
 
-1. 由 verifier 在开始时从宿主机挂载目录复制隐藏文件。
-2. 或者通过 Harbor 外层 job wrapper 在 agent 结束后再注入。
+1. 由 verifier 通过环境变量恢复隐藏文件到临时目录。
+2. 或者由宿主机挂载私有目录给 verifier 使用。
 3. 或者把隐藏评分逻辑内嵌到 verifier 脚本中，而不是以独立 `.js` 文件暴露。
 
 如果你要做公开 benchmark，我建议直接上正式版，不要依赖“agent 不会去看 `/tests`”这个假设。
@@ -427,13 +428,13 @@ storage_mb = 4096
 - 单 task
 - 单尺寸 `6x6`
 - 可见 fixture 来自当前 `game/`
-- 隐藏评分先放在 `tests/hidden/`
+- 隐藏评分通过 `verifier.env` 注入
 - verifier 产出 `reward.txt + reward.json`
 - artifact 导出 `rolloutAI.js + REPORT.md + summary.json`
 
 ### V1：补防作弊和稳定性
 
-- 加受保护文件 hash 校验
+- 加受保护文件完整性校验
 - 固定 seed
 - 结果解析脚本化
 - 隐藏资产改成 verifier-only 注入
@@ -472,7 +473,7 @@ storage_mb = 4096
 
 ```text
 setup visible repo
--> verify protected file hashes
+-> verify protected files against init commit
 -> run visible gate: ro vs ok
 -> run visible gate: ro vs gr
 -> run perf gate

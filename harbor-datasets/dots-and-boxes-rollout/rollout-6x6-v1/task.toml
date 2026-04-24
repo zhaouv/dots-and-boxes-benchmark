@@ -1,0 +1,25 @@
+version = "0.1"
+
+[metadata]
+name = "dots-and-boxes-rollout-6x6-v1"
+description = "Implement RolloutAI for dots and boxes with visible gates and hidden evaluation."
+category = "game-algorithm"
+tags = ["javascript", "game-ai", "simulation", "search", "harbor"]
+
+[environment]
+build_timeout_sec = 600
+cpus = 2
+memory_mb = 4096
+storage_mb = 4096
+allow_internet = false
+
+[agent]
+timeout_sec = 1800
+user = "agent"
+
+[verifier]
+timeout_sec = 600
+
+[verifier.env]
+HIDDEN_ROLLOUT_BENCH_B64 = "${HIDDEN_ROLLOUT_BENCH_B64}"
+HIDDEN_AIVSAI_BENCH_B64 = "${HIDDEN_AIVSAI_BENCH_B64}"
