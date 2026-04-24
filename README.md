@@ -271,6 +271,7 @@ Harbor 的 Docker 环境构建时，build context 是 `environment/` 目录，�
 下面是一条在 `2026-04-24` 本地实际跑通的命令，用的是 Harbor 内置 `codex` agent、`gpt-5.4`、`xhigh`，并通过自定义 `OPENAI_BASE_URL` 走网关：
 
 ```bash
+eval "$(./scripts/export_hidden_env.sh)"
 harbor run \
   -p harbor-datasets/dots-and-boxes-rollout/rollout-6x6-v1 \
   -a codex \
@@ -301,17 +302,18 @@ Results written to jobs/2026-04-24__17-02-18/result.json
 - `ro vs ok` 胜率 `0.87`
 - `ro vs gr` 胜率 `0.99`
 - `ro vs br` 胜率 `0.65`
-- `ro vs ok` 评测耗时 `21.21s`
-- `ro vs br` 评测耗时 `40.50s`
 - token 用量：`input=1260233`、`cache=1223552`、`output=22688`
-- Harbor 总耗时 `13m 18s`
 
-对应产物位置：
+时间消耗：
 
-- trial 总结果：`jobs/2026-04-24__17-02-18/rollout-6x6-v1__YyrsS4x/result.json`
-- verifier 汇总：`jobs/2026-04-24__17-02-18/rollout-6x6-v1__YyrsS4x/verifier/reward.json`
-- 公开对战明细：`jobs/2026-04-24__17-02-18/rollout-6x6-v1__YyrsS4x/artifacts/visible_eval.txt`
-- 隐藏对战明细：`jobs/2026-04-24__17-02-18/rollout-6x6-v1__YyrsS4x/artifacts/hidden_eval.txt`
+- Harbor 总耗时：`13m 18s`
+- 环境启动：约 `4.29s`
+- agent 安装/setup：约 `1m45s`
+- agent 执行：约 `9m45s`
+- verifier：约 `1m26s`
+- `ro vs ok` 评测时间：`21.21s`
+- `ro vs gr` 评测时间：`21.10s`
+- `ro vs br` 评测时间：`40.50s`
 
 这次样例里，公开门槛和隐藏评测都成功完成，`failure_reason = null`，可以作为一个完整跑通的参考基线。
 
