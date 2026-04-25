@@ -195,7 +195,41 @@ harbor run \
 
 如果你习惯放在 Codex CLI 自己的配置里，也可以继续用 `~/.codex/config.toml`，但对 Harbor 来说最直接的是 `--ak reasoning_effort=xhigh`。
 
-### 6. 看结果
+### 6. Claude Code 安装 403 的本地绕过
+
+如果你在这个 task 里跑 Harbor 内置 `claude-code`，并且 setup 阶段卡在：
+
+```text
+curl -fsSL https://claude.ai/install.sh | bash -s --
+curl: (22) The requested URL returned error: 403
+```
+
+可以改用这个仓库自带的本地 agent 变体。它保留原有 `claude-code` 行为，但把安装步骤改成：
+
+- 只要环境里有 `npm`，优先走 `npm install -g @anthropic-ai/claude-code`
+- 并把 npm 全局前缀设到 `~/.local`，避免非 root 用户在 Debian 镜像里 `npm -g` 写权限失败
+- 只有在没有 `npm` 时，才退回 `curl https://claude.ai/install.sh`
+
+运行方式：
+
+```bash
+PYTHONPATH="$PWD" harbor run \
+  -y \
+  -p harbor-datasets/dots-and-boxes-rollout/rollout-6x6-v1 \
+  --agent-import-path harbor_local_agents.claude_code_npm:ClaudeCodeNpm \
+  -m 你的_claude_模型名 \
+  --ae ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
+  --ae ANTHROPIC_BASE_URL="$ANTHROPIC_BASE_URL" \
+  --ak reasoning_effort=high
+```
+
+注意：
+
+- 这里不要再同时传 `-a claude-code`，否则 Harbor 会优先用内置 agent，忽略 `--agent-import-path`
+- 如果你还需要代理，继续额外传 `--ae HTTPS_PROXY=...` / `--ae HTTP_PROXY=...`
+- 代理地址不要写容器内的 `127.0.0.1`，要写容器能访问到的宿主机地址
+
+### 7. 看结果
 
 Harbor 会把 job 结果写到本地 `jobs/` 目录。这个 task 的 verifier 会额外产出：
 

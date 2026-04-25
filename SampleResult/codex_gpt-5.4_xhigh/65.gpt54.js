@@ -2,10 +2,22 @@
 RolloutAI=function(){
     OffensiveKeeperAI.call(this)
     this.rolloutCandidateMax=15
+    this.rolloutSalt=null
     return this
 }
 RolloutAI.prototype = Object.create(OffensiveKeeperAI.prototype)
 RolloutAI.prototype.constructor = RolloutAI
+
+RolloutAI.prototype.getRolloutSalt=function(){
+    if(this.rolloutSalt==null){
+        var salt=(Math.random()*4294967296)>>>0
+        if(this.playerId!=null){
+            salt^=Math.imul(this.playerId+1,1597334677)
+        }
+        this.rolloutSalt=salt>>>0
+    }
+    return this.rolloutSalt
+}
 
 RolloutAI.prototype.hashGameData=function(gameData){
     var hash=2166136261>>>0
@@ -18,6 +30,10 @@ RolloutAI.prototype.hashGameData=function(gameData){
         }
     }
     return hash>>>0
+}
+
+RolloutAI.prototype.getRolloutSeedBase=function(gameData){
+    return (this.hashGameData(gameData)^this.getRolloutSalt())>>>0
 }
 
 RolloutAI.prototype.makeRand=function(seed){
@@ -253,7 +269,7 @@ RolloutAI.prototype.where=function(){
     var gameData=this.gameData
 
     if(!gameData.edgeCount[gameData.EDGE_NOW]&&gameData.edgeCount[gameData.EDGE_NOT]){
-        var seedBase=this.hashGameData(gameData)
+        var seedBase=this.getRolloutSeedBase(gameData)
         var candidates=this.sampleSafeEdges(gameData,this.getCandidateMax(gameData),seedBase)
         var rolloutCount=this.getSafeRolloutCount(gameData,candidates.length)
         return this.pickByRollout(gameData,candidates,rolloutCount,seedBase^374761393)
@@ -269,7 +285,7 @@ RolloutAI.prototype.where=function(){
         if(yieldEdge){
             var eatEdge=gameData.getOneEdgeFromRegionIndex(gameData.scoreRegion[0])
             if(eatEdge.x!==yieldEdge.x||eatEdge.y!==yieldEdge.y){
-                var duelSeedBase=this.hashGameData(gameData)^1103515245
+                var duelSeedBase=this.getRolloutSeedBase(gameData)^1103515245
                 var duelRolloutCount=this.getDuelRolloutCount(gameData)
                 return this.pickByRollout(
                     gameData,
