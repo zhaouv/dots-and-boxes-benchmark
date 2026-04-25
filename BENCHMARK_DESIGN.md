@@ -95,6 +95,7 @@ scripts/
 
 ### 说明
 
+- 当前除 `rollout-6x6-v1` 外，还落地了 `rollout-6x6-highgate-v1`，用于更高公开门槛：`ro vs ok` >= 95%、`ro vs gr` = 100%、OK 对战 <= 180s。
 - `fixtures/workspace/` 是从当前 `game/` 目录拷出来的**可见版本**。
 - `environment/workspace/` 是同一份可见工作区在 Docker build context 下的副本，因为 Harbor 的 Docker build context 固定为 `environment/`。
 - Harbor 运行时，`fixtures/workspace/` 会被铺到 `/app` 根目录，也就是 agent 看到的是 `aivsai.js`、`rolloutAI.js` 这类平铺文件。

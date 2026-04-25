@@ -8,15 +8,19 @@
 - `BENCHMARK_DESIGN.md`：benchmark 设计草案
 - `plan.md`：当前落地计划
 - `harbor-datasets/dots-and-boxes-rollout/rollout-6x6-v1/`：第一版 Harbor task 骨架
+- `harbor-datasets/dots-and-boxes-rollout/rollout-6x6-highgate-v1/`：公开高门槛 Harbor task 变体
 - `scripts/export_hidden_env.sh`：把隐藏 bench 文件编码成 verifier 环境变量
 
-## 当前 Harbor task
+## 当前 Harbor tasks
 
 任务路径：
 
-`harbor-datasets/dots-and-boxes-rollout/rollout-6x6-v1`
+- `harbor-datasets/dots-and-boxes-rollout/rollout-6x6-v1`
+  - 公开门槛：`ro vs ok` >= 70%，`ro vs gr` >= 90%，OK 对战 <= 60 秒
+- `harbor-datasets/dots-and-boxes-rollout/rollout-6x6-highgate-v1`
+  - 公开门槛：`ro vs ok` >= 95%，`ro vs gr` = 100%，OK 对战 <= 180 秒
 
-该 task 当前包含：
+这些 task 当前包含：
 
 - 可见工作区 fixture
 - `environment/` 下的 Docker build-context 副本

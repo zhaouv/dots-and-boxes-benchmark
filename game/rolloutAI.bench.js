@@ -1,303 +1,242 @@
 
 ////////////////// BenchRolloutAI //////////////////
-////////////////// BenchRolloutAI //////////////////
 BenchRolloutAI=function(){
     OffensiveKeeperAI.call(this)
-    this.rolloutCandidateMax=15
-    this.rolloutSalt=null
     return this
 }
 BenchRolloutAI.prototype = Object.create(OffensiveKeeperAI.prototype)
 BenchRolloutAI.prototype.constructor = BenchRolloutAI
 
-BenchRolloutAI.prototype.getRolloutSalt=function(){
-    if(this.rolloutSalt==null){
-        var salt=(Math.random()*4294967296)>>>0
-        if(this.playerId!=null){
-            salt^=Math.imul(this.playerId+1,1597334677)
-        }
-        this.rolloutSalt=salt>>>0
-    }
-    return this.rolloutSalt
-}
+BenchRolloutAI.prototype.WIN_SCORE=10000
+BenchRolloutAI.prototype.MAX_SAFE_SIM=15
 
-BenchRolloutAI.prototype.hashGameData=function(gameData){
-    var hash=2166136261>>>0
-    hash=Math.imul(hash^gameData.playerId,16777619)>>>0
-    hash=Math.imul(hash^gameData.player[0].score,16777619)>>>0
-    hash=Math.imul(hash^gameData.player[1].score,16777619)>>>0
-    for(var jj=0;jj<2*gameData.ysize+1;jj++){
-        for(var ii=0;ii<2*gameData.xsize+1;ii++){
-            hash=Math.imul(hash^(gameData.xy(ii,jj)+104729),16777619)>>>0
-        }
-    }
-    return hash>>>0
-}
+BenchRolloutAI.prototype.where = function(){
+    var gameData = this.gameData
+    var myId = this.playerId
 
-BenchRolloutAI.prototype.getRolloutSeedBase=function(gameData){
-    return (this.hashGameData(gameData)^this.getRolloutSalt())>>>0
-}
-
-BenchRolloutAI.prototype.makeRand=function(seed){
-    var state=(seed>>>0)||1
-    return function(n){
-        state=(Math.imul(state,1664525)+1013904223)>>>0
-        if(n==null)return state/4294967296
-        if(!n)return 0
-        return state%n
-    }
-}
-
-BenchRolloutAI.prototype.edgeKey=function(edge){
-    return edge.x+','+edge.y
-}
-
-BenchRolloutAI.prototype.addCandidateEdge=function(edges,seen,edge){
-    if(!edge)return
-    var key=this.edgeKey(edge)
-    if(seen[key])return
-    seen[key]=true
-    edges.push(edge)
-}
-
-BenchRolloutAI.prototype.getCandidateMax=function(gameData){
-    if(gameData.totalScore<=25)return 20
-    return this.rolloutCandidateMax
-}
-
-BenchRolloutAI.prototype.sampleSafeEdges=function(gameData,maxCount,seed){
-    var all=gameData.getAllEdges(gameData.EDGE_NOT)
-    if(all.length<=maxCount)return all
-    var edges=[]
-    var seen={}
-    var grouped=gameData.getEdgeGroupedByRegion(gameData.EDGE_NOT)
-    for(var ii=0;ii<grouped.length&&edges.length<maxCount;ii++){
-        this.addCandidateEdge(edges,seen,grouped[ii])
-    }
-    var rand=this.makeRand(seed^2654435769)
-    var pool=all.slice()
-    for(var remain=pool.length;remain>0&&edges.length<maxCount;remain--){
-        var index=rand(remain)
-        var edge=pool[index]
-        pool[index]=pool[remain-1]
-        pool[remain-1]=edge
-        this.addCandidateEdge(edges,seen,edge)
-    }
-    return edges
-}
-
-BenchRolloutAI.prototype.getRandWhereWithRand=function(gameData,number,rand){
-    var count=gameData.edgeCount[number]
-    if(!count)return null
-    var index=rand(count)
-    for(var jj=0;jj<2*gameData.ysize+1;jj++){
-        for(var ii=0;ii<2*gameData.xsize+1;ii++){
-            if(gameData.xy(ii,jj)===number){
-                if(!index)return {'x':ii,'y':jj}
-                index--
+    // 收官阶段：判定点选择吃/让
+    if (gameData.edgeCount[gameData.EDGE_NOW] > 0 && gameData.edgeCount[gameData.EDGE_NOT] === 0) {
+        if (this.isDecisionPoint(gameData)) {
+            var region = gameData.connectedRegion[gameData.scoreRegion[0]]
+            if (region) {
+                var eatResult = this.simulateBranch(gameData, 'eat', region)
+                var yieldResult = this.simulateBranch(gameData, 'yield', region)
+                if (yieldResult > eatResult) {
+                    var yieldEdge = this.pickYieldEdge(gameData, region)
+                    if (yieldEdge) return yieldEdge
+                }
             }
         }
-    }
-    return null
-}
-
-BenchRolloutAI.prototype.okTryKeepOffensiveMove=function(gameData){
-    var eatOne=gameData.getOneEdgeFromRegionIndex(gameData.scoreRegion[0])
-
-    if(gameData.regionNum==1)return eatOne
-
-    var regions={}
-    for(var ii in gameData.connectedRegion){
-        var region=gameData.connectedRegion[ii]
-        if(!region)continue
-        var len=region.block.length
-        regions[len]=regions[len]||[]
-        regions[len].push(region.index)
+        return OffensiveKeeperAI.prototype.where.call(this)
     }
 
-    if(regions[1]){
-        for(var jj=0;jj<regions[1].length;jj++){
-            var regionIndex1=regions[1][jj]
-            if(gameData.scoreRegion.indexOf(regionIndex1)!==-1){
-                return gameData.getOneEdgeFromRegionIndex(regionIndex1)
-            }
-        }
+    // 安全步：模拟每个安全边选最优
+    if (gameData.edgeCount[gameData.EDGE_NOW] === 0 && gameData.edgeCount[gameData.EDGE_NOT] > 0) {
+        return this.pickBestSafeMove(gameData)
     }
 
-    if(regions[2]&&gameData.scoreRegion.length>1){
-        for(var kk=0;kk<regions[2].length;kk++){
-            var regionIndex2=regions[2][kk]
-            if(gameData.scoreRegion.indexOf(regionIndex2)!==-1){
-                return gameData.getOneEdgeFromRegionIndex(regionIndex2)
-            }
-        }
+    // 有得分且有安全步：直接吃（和OK一致）
+    if (gameData.edgeCount[gameData.EDGE_NOW] > 0) {
+        return this.getRandWhere(gameData.EDGE_NOW)
     }
 
-    if(gameData.scoreRegion.length>2){
-        for(var ll=0;ll<gameData.scoreRegion.length;ll++){
-            var region3=gameData.connectedRegion[gameData.scoreRegion[ll]]
-            if(region3.isRing)return gameData.getOneEdgeFromRegion(region3)
-        }
-        return eatOne
-    }
-
-    if(gameData.scoreRegion.length===2&&gameData.connectedRegion[gameData.scoreRegion[1]].isRing){
-        return gameData.getOneEdgeFromRegionIndex(gameData.scoreRegion[1])
-    }
-    if(gameData.scoreRegion.length===2)return eatOne
-
-    var region=gameData.connectedRegion[gameData.scoreRegion[0]]
-
-    if(region.isRing&&region.block.length!==4)return eatOne
-    if(!region.isRing&&region.block.length!==2)return eatOne
-
-    var yieldEdge=this.getSingleRegionYieldMove(gameData,region)
-    return yieldEdge||eatOne
-}
-
-BenchRolloutAI.prototype.okWhereWithRand=function(gameData,rand){
-    if(gameData.edgeCount[gameData.EDGE_NOW]){
-        if(gameData.edgeCount[gameData.EDGE_NOT]===0){
-            return this.okTryKeepOffensiveMove(gameData)
-        }
-        return this.getRandWhereWithRand(gameData,gameData.EDGE_NOW,rand)
-    }
-    if(gameData.edgeCount[gameData.EDGE_NOT]){
-        return this.getRandWhereWithRand(gameData,gameData.EDGE_NOT,rand)
-    }
+    // 必须让分：让最小区域
     return gameData.getOneEdgeFromRegion(gameData.getMinConnectedRegion())
 }
 
-BenchRolloutAI.prototype.getSingleRegionYieldMove=function(gameData,region){
-    if(!region)return null
-    var stack=region.block
-    if(region.isRing){
-        if(region.block.length!==4)return null
-        return {'x':(stack[1].x+stack[2].x)/2,'y':(stack[1].y+stack[2].y)/2}
-    }
-    if(region.block.length!==2)return null
-    var p1=1
-    if(gameData.xy(stack[0].x,stack[0].y)!==gameData.SCORE_3){
-        p1=0
-    }
-    var directions=[{x:0,y:-1},{x:1,y:0},{x:0,y:1},{x:-1,y:0}]
-    for(var ii=0,d;d=directions[ii];ii++){
-        var xx=stack[p1].x+d.x
-        var yy=stack[p1].y+d.y
-        var xxx=stack[p1].x+2*d.x
-        var yyy=stack[p1].y+2*d.y
-        if(gameData.xy(xx,yy)!==gameData.EDGE_USED&&gameData.xy(xxx,yyy)=='out range'){
-            return {'x':xx,'y':yy}
+// 模拟一个分支到终局，返回我方最终得分差
+BenchRolloutAI.prototype.simulateBranch = function(gameData, branchType, region) {
+    var sim = gameData.clone()
+    var myId = this.playerId
+
+    if (branchType === 'eat') {
+        var eatEdge = sim.getOneEdgeFromRegion(region)
+        sim.putxy(eatEdge.x, eatEdge.y)
+        while (sim.edgeCount[sim.EDGE_NOW] > 0 && sim.winnerId == null) {
+            var edge = this.pickEatableEdge(sim)
+            if (!edge) break
+            sim.putxy(edge.x, edge.y)
         }
+    } else {
+        var yieldEdge = this.pickYieldEdge(gameData, region)
+        if (!yieldEdge) return -Infinity
+        sim.putxy(yieldEdge.x, yieldEdge.y)
     }
+
+    this.simulateToEnd(sim)
+    return sim.player[myId].score - sim.player[1 - myId].score
+}
+
+// 用 OK 策略模拟到终局
+BenchRolloutAI.prototype.simulateToEnd = function(sim) {
+    var maxSteps = 200
+    while (sim.winnerId == null && maxSteps-- > 0) {
+        var okAi = new OffensiveKeeperAI()
+        okAi.playerId = sim.playerId
+        okAi.gameData = sim
+        try {
+            var where = OffensiveKeeperAI.prototype.where.call(okAi)
+        } catch(e) {
+            if (sim.edgeCount[sim.EDGE_NOW] > 0) {
+                var edges = sim.getAllEdges(sim.EDGE_NOW)
+                if (edges.length > 0) { sim.putxy(edges[0].x, edges[0].y); continue }
+            }
+            break
+        }
+        if (!where || where.x == null) break
+        sim.putxy(where.x, where.y)
+    }
+}
+
+// 安全步模拟选择
+BenchRolloutAI.prototype.pickBestSafeMove = function(gameData) {
+    var edges = gameData.getAllEdges(gameData.EDGE_NOT)
+    if (edges.length === 0) return null
+    if (edges.length === 1) return edges[0]
+
+    var myId = this.playerId
+    var best = null, bestScore = -Infinity
+
+    // 采样上限
+    var candidates = edges
+    if (candidates.length > this.MAX_SAFE_SIM) {
+        // 随机采样
+        for (var i = candidates.length - 1; i > 0; i--) {
+            var j = ~~(Math.random() * (i + 1))
+            var tmp = candidates[i]; candidates[i] = candidates[j]; candidates[j] = tmp
+        }
+        candidates = candidates.slice(0, this.MAX_SAFE_SIM)
+    }
+
+    for (var i = 0; i < candidates.length; i++) {
+        var sim = gameData.clone()
+        sim.putxy(candidates[i].x, candidates[i].y)
+        if (sim.winnerId != null) {
+            var score = sim.player[myId].score - sim.player[1 - myId].score
+            if (score > bestScore) { bestScore = score; best = candidates[i] }
+            continue
+        }
+        // 如果产生了 EDGE_NOW，先吃完（当前玩家继续）
+        while (sim.edgeCount[sim.EDGE_NOW] > 0 && sim.winnerId == null) {
+            var okAi = new OffensiveKeeperAI()
+            okAi.playerId = sim.playerId
+            okAi.gameData = sim
+            try {
+                var where = OffensiveKeeperAI.prototype.where.call(okAi)
+            } catch(e) {
+                var eList = sim.getAllEdges(sim.EDGE_NOW)
+                if (eList.length > 0) { sim.putxy(eList[0].x, eList[0].y); continue }
+                break
+            }
+            if (!where || where.x == null) break
+            sim.putxy(where.x, where.y)
+        }
+        this.simulateToEnd(sim)
+        var score = sim.player[myId].score - sim.player[1 - myId].score
+        if (score > bestScore) { bestScore = score; best = candidates[i] }
+    }
+
+    return best || edges[0]
+}
+
+BenchRolloutAI.prototype.isDecisionPoint = function(gameData) {
+    if (gameData.edgeCount[gameData.EDGE_NOW] === 0) return false
+    if (gameData.edgeCount[gameData.EDGE_NOT] > 0) return false
+    if (gameData.regionNum <= 1) return false
+    if (gameData.scoreRegion.length !== 1) return false
+
+    var region = gameData.connectedRegion[gameData.scoreRegion[0]]
+    if (!region) return false
+
+    if (!region.isRing && region.block.length === 2) return true
+    if (region.isRing && region.block.length === 4) return true
+
+    return false
+}
+
+BenchRolloutAI.prototype.eatUntilDecision = function(gameData) {
+    var way = []
+    var sim = gameData.clone()
+
+    while (sim.edgeCount[sim.EDGE_NOW] > 0 && sim.winnerId == null) {
+        if (this.isDecisionPoint(sim)) {
+            return { way: way, gameData: sim, atDecisionPoint: true }
+        }
+        var edge = this.pickEatableEdge(sim)
+        if (!edge) break
+        way.push(edge)
+        sim.putxy(edge.x, edge.y)
+    }
+
+    return { way: way, gameData: sim, atDecisionPoint: false }
+}
+
+BenchRolloutAI.prototype.safeGetEdgeFromScoreRegion = function(gameData) {
+    for (var ii = 0; ii < gameData.scoreRegion.length; ii++) {
+        var region = gameData.connectedRegion[gameData.scoreRegion[ii]]
+        if (region) return gameData.getOneEdgeFromRegion(region)
+    }
+    var edges = gameData.getAllEdges(gameData.EDGE_NOW)
+    if (edges.length > 0) return edges[0]
     return null
 }
 
-BenchRolloutAI.prototype.playoutScore=function(gameData,seed,rootPlayerId){
-    var rand=this.makeRand(seed)
-    var limit=(2*gameData.xsize+1)*(2*gameData.ysize+1)+8
-    while(gameData.winnerId==null&&limit>0){
-        limit--
-        var where=this.okWhereWithRand(gameData,rand)
-        if(!where)break
-        gameData.putxy(where.x,where.y)
+BenchRolloutAI.prototype.pickEatableEdge = function(gameData) {
+    if (gameData.regionNum <= 1) {
+        return this.safeGetEdgeFromScoreRegion(gameData)
     }
-    var diff=gameData.player[rootPlayerId].score-gameData.player[1-rootPlayerId].score
-    if(gameData.winnerId===rootPlayerId)return 10000+diff
-    if(gameData.winnerId===1-rootPlayerId)return -10000+diff
-    return diff
-}
-
-BenchRolloutAI.prototype.getSafeRolloutCount=function(gameData,candidateCount){
-    var safeCount=gameData.edgeCount[gameData.EDGE_NOT]
-    if(gameData.totalScore<=25){
-        if(candidateCount>=12||safeCount>=24)return 2
-        if(candidateCount>=6||safeCount>=12)return 3
-        return 4
+    var regions = {}
+    for (var ii in gameData.connectedRegion) {
+        var region = gameData.connectedRegion[ii]
+        if (!region) continue
+        var len = region.block.length
+        regions[len] = regions[len] || []
+        regions[len].push(region.index)
     }
-    if(candidateCount>=12||safeCount>=36)return 1
-    if(candidateCount>=6||safeCount>=18)return 2
-    return 3
-}
-
-BenchRolloutAI.prototype.getDuelRolloutCount=function(gameData){
-    var region=gameData.connectedRegion[gameData.scoreRegion[0]]
-    if(gameData.totalScore<=25){
-        if(region&&region.isRing)return 12
-        return 10
-    }
-    if(region&&region.isRing)return 10
-    return 8
-}
-
-BenchRolloutAI.prototype.scoreCandidate=function(gameData,edge,rolloutCount,seedBase,rootPlayerId){
-    var after=gameData.clone()
-    after.putxy(edge.x,edge.y)
-    var total=0
-    var tieBreak=after.edgeCount[after.EDGE_NOT]-after.scoreRegion.length*3-after.edgeCount[after.EDGE_WILL]
-    for(var ii=0;ii<rolloutCount;ii++){
-        var sim=rolloutCount===1&&ii===0?after:after.clone()
-        var seed=seedBase
-        seed^=Math.imul(edge.x+17,2246822519)
-        seed^=Math.imul(edge.y+31,3266489917)
-        seed^=Math.imul(ii+1,668265263)
-        total+=this.playoutScore(sim,seed>>>0,rootPlayerId)
-    }
-    return {
-        edge:edge,
-        score:total,
-        tieBreak:tieBreak,
-    }
-}
-
-BenchRolloutAI.prototype.pickByRollout=function(gameData,candidates,rolloutCount,seedBase){
-    if(candidates.length===1)return candidates[0]
-    var rootPlayerId=gameData.playerId
-    var best=null
-    for(var ii=0;ii<candidates.length;ii++){
-        var result=this.scoreCandidate(gameData,candidates[ii],rolloutCount,seedBase,rootPlayerId)
-        if(
-            best==null||
-            result.score>best.score||
-            (result.score===best.score&&result.tieBreak>best.tieBreak)
-        ){
-            best=result
+    if (regions[1]) {
+        for (var ii = 0; ii < regions[1].length; ii++) {
+            if (gameData.scoreRegion.indexOf(regions[1][ii]) !== -1)
+                return gameData.getOneEdgeFromRegionIndex(regions[1][ii])
         }
     }
-    return best.edge
-}
-
-BenchRolloutAI.prototype.where=function(){
-    var gameData=this.gameData
-
-    if(!gameData.edgeCount[gameData.EDGE_NOW]&&gameData.edgeCount[gameData.EDGE_NOT]){
-        var seedBase=this.getRolloutSeedBase(gameData)
-        var candidates=this.sampleSafeEdges(gameData,this.getCandidateMax(gameData),seedBase)
-        var rolloutCount=this.getSafeRolloutCount(gameData,candidates.length)
-        return this.pickByRollout(gameData,candidates,rolloutCount,seedBase^374761393)
-    }
-
-    if(
-        gameData.edgeCount[gameData.EDGE_NOW]&&
-        gameData.edgeCount[gameData.EDGE_NOT]===0&&
-        gameData.scoreRegion.length===1
-    ){
-        var region=gameData.connectedRegion[gameData.scoreRegion[0]]
-        var yieldEdge=this.getSingleRegionYieldMove(gameData,region)
-        if(yieldEdge){
-            var eatEdge=gameData.getOneEdgeFromRegionIndex(gameData.scoreRegion[0])
-            if(eatEdge.x!==yieldEdge.x||eatEdge.y!==yieldEdge.y){
-                var duelSeedBase=this.getRolloutSeedBase(gameData)^1103515245
-                var duelRolloutCount=this.getDuelRolloutCount(gameData)
-                return this.pickByRollout(
-                    gameData,
-                    [eatEdge,yieldEdge],
-                    duelRolloutCount,
-                    duelSeedBase
-                )
-            }
+    if (regions[2] && gameData.scoreRegion.length > 1) {
+        for (var ii = 0; ii < regions[2].length; ii++) {
+            if (gameData.scoreRegion.indexOf(regions[2][ii]) !== -1)
+                return gameData.getOneEdgeFromRegionIndex(regions[2][ii])
         }
     }
+    if (gameData.scoreRegion.length > 2) {
+        for (var ii in gameData.scoreRegion) {
+            var r = gameData.connectedRegion[gameData.scoreRegion[ii]]
+            if (r && r.isRing) return gameData.getOneEdgeFromRegion(r)
+        }
+        return this.safeGetEdgeFromScoreRegion(gameData)
+    }
+    if (gameData.scoreRegion.length === 2) {
+        var r1 = gameData.connectedRegion[gameData.scoreRegion[1]]
+        if (r1 && r1.isRing) return gameData.getOneEdgeFromRegion(r1)
+        return this.safeGetEdgeFromScoreRegion(gameData)
+    }
+    return this.safeGetEdgeFromScoreRegion(gameData)
+}
 
-    return GreedyRandomAI.prototype.where.call(this)
+BenchRolloutAI.prototype.pickYieldEdge = function(gameData, region) {
+    var stack = region.block
+    if (region.isRing) {
+        var mid = ~~(region.block.length / 2)
+        return { x: (stack[mid-1].x + stack[mid].x) / 2, y: (stack[mid-1].y + stack[mid].y) / 2 }
+    }
+    if (!region.isRing) {
+        var p1 = gameData.xy(stack[0].x, stack[0].y) !== gameData.SCORE_3 ? 0 : region.block.length - 1
+        var directions = [{x:0,y:-1},{x:1,y:0},{x:0,y:1},{x:-1,y:0}]
+        for (var ii = 0, d; d = directions[ii]; ii++) {
+            var xx = stack[p1].x + d.x, yy = stack[p1].y + d.y
+            var xxx = stack[p1].x + 2*d.x, yyy = stack[p1].y + 2*d.y
+            if (gameData.xy(xx, yy) !== gameData.EDGE_USED
+                && gameData.xy(xxx, yyy) === 'out range')
+                return { x: xx, y: yy }
+        }
+        // L2不在棋盘边缘，无法让分，直接吃
+    }
+    return null
 }

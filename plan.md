@@ -5,6 +5,7 @@
 当前 task 路径：
 
 - `harbor-datasets/dots-and-boxes-rollout/rollout-6x6-v1`
+- `harbor-datasets/dots-and-boxes-rollout/rollout-6x6-highgate-v1`
 
 ## 目标
 
@@ -52,6 +53,10 @@
 
 ## Phase 4：扩展 benchmark
 
+- [x] 增加 `rollout-6x6-highgate-v1` 公开高门槛变体：
+  - [x] `ro vs ok` 胜率门槛调到 95%+
+  - [x] `ro vs gr` 胜率门槛调到 100%
+  - [x] `ro vs ok` 50 局双向对战时间门槛调到 180 秒
 - [ ] 增加更多 task 变体，如不同时间预算。
 - [ ] 统一 leaderboard 展示字段。
 - [ ] 增加 oracle / sanity check，确认任务可解且评分稳定。
