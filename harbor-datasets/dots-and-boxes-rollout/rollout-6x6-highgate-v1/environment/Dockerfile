@@ -12,7 +12,8 @@ COPY setup_visible_repo.sh /usr/local/bin/setup_visible_repo.sh
 COPY workspace/ /opt/dots-and-boxes-visible/
 
 RUN chmod +x /usr/local/bin/setup_visible_repo.sh \
-    && /usr/local/bin/setup_visible_repo.sh /opt/dots-and-boxes-visible /app agent
+    && /usr/local/bin/setup_visible_repo.sh /opt/dots-and-boxes-visible /app agent \
+    && git config --system --add safe.directory /app
 
 ENV HOME=/home/agent
 USER agent

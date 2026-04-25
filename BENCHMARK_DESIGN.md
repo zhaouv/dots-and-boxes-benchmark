@@ -388,6 +388,7 @@ allow_internet = true
 - CPU 固定，便于比较时间
 - 当前 Harbor task 允许联网，避免内置 `codex` agent 在容器内安装依赖时直接失败
 - `agent` / `verifier` 默认用 `root`，优先保证 Harbor bind mount 的日志目录可写
+- `/app` 初始化仓库归 `agent` 用户，镜像需在 system git config 中添加 `safe.directory = /app`，避免 root 执行 `git status` / `git diff` 时触发 owner 安全检查
 
 ## 12. 建议的环境镜像
 

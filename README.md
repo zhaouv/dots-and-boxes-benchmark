@@ -26,6 +26,7 @@
 - `environment/` 下的 Docker build-context 副本
 - Docker 环境与 git 初始化脚本
 - `agent` / `verifier` 显式以 `root` 运行，避免 Harbor mounted logs 的写权限问题
+- 镜像将 `/app` 注册为 Git `safe.directory`，避免 root 运行 agent 时被仓库 owner 检查拦截
 - 当前 task 允许容器联网，便于 Harbor 内置 `codex` agent 在环境内完成依赖安装与 API 调用
 - 公开门槛 verifier
 - 基于环境变量注入的隐藏评分接口
