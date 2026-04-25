@@ -367,7 +367,7 @@ category = "game-algorithm"
 tags = ["javascript", "search", "simulation", "game-ai"]
 
 [agent]
-timeout_sec = 1800
+timeout_sec = 3600
 user = "root"
 
 [verifier]
@@ -383,7 +383,7 @@ allow_internet = true
 
 这里的逻辑是：
 
-- agent 30 分钟内完成任务
+- agent 1 小时内完成任务
 - verifier 10 分钟内完成评分
 - CPU 固定，便于比较时间
 - 当前 Harbor task 允许联网，避免内置 `codex` agent 在容器内安装依赖时直接失败

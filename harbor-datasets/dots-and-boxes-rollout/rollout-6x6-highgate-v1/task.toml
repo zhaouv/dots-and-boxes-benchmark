@@ -14,7 +14,7 @@ storage_mb = 4096
 allow_internet = true
 
 [agent]
-timeout_sec = 1800
+timeout_sec = 3600
 user = "root"
 
 [verifier]
