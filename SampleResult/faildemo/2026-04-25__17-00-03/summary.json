@@ -1,0 +1,21 @@
+{
+  "primary_score": 0,
+  "passed_visible_gate": 0,
+  "hidden_assets_present": 1,
+  "hidden_eval_ran": 0,
+  "ok_winrate": 0.96,
+  "ok_wins": 96,
+  "ok_losses": 4,
+  "ok_total_games": 100,
+  "ok_runtime_sec": 219.67,
+  "gr_winrate": 0.95,
+  "gr_wins": 95,
+  "gr_losses": 5,
+  "gr_total_games": 100,
+  "br_winrate": 0,
+  "br_wins": 0,
+  "br_losses": 0,
+  "br_total_games": 0,
+  "br_runtime_sec": null,
+  "failure_reason": "visible_gate_failed"
+}

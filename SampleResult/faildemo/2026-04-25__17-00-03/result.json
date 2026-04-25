@@ -1,0 +1,109 @@
+{
+    "id": "3c45bac8-38ab-486d-b486-cc9e490962d8",
+    "task_name": "rollout-6x6-highgate-v1",
+    "trial_name": "rollout-6x6-highgate-v1__rbcbQxM",
+    "trial_uri": "file:///home/zhaouv/e/git/github/dots-and-boxes-benchmark/jobs/2026-04-25__17-00-03/rollout-6x6-highgate-v1__rbcbQxM",
+    "task_id": {
+        "path": "harbor-datasets/dots-and-boxes-rollout/rollout-6x6-highgate-v1"
+    },
+    "source": null,
+    "task_checksum": "bb1dfac8e26c8d074976f5c96a9a2c3e89da1da109e1d5627d6637c80886dcfa",
+    "config": {
+        "task": {
+            "path": "harbor-datasets/dots-and-boxes-rollout/rollout-6x6-highgate-v1",
+            "git_url": null,
+            "git_commit_id": null,
+            "name": null,
+            "ref": null,
+            "overwrite": false,
+            "download_dir": null,
+            "source": null
+        },
+        "trial_name": "rollout-6x6-highgate-v1__rbcbQxM",
+        "trials_dir": "jobs/2026-04-25__17-00-03",
+        "timeout_multiplier": 1.0,
+        "agent_timeout_multiplier": null,
+        "verifier_timeout_multiplier": null,
+        "agent_setup_timeout_multiplier": null,
+        "environment_build_timeout_multiplier": null,
+        "agent": {
+            "name": "codex",
+            "import_path": null,
+            "model_name": "gpt-5.5",
+            "override_timeout_sec": null,
+            "override_setup_timeout_sec": null,
+            "max_timeout_sec": null,
+            "kwargs": {
+                "reasoning_effort": "xhigh"
+            },
+            "env": {
+                "OPENAI_API_KEY": "${OPENAI_API_KEY}"
+            }
+        },
+        "environment": {
+            "type": "docker",
+            "import_path": null,
+            "force_build": false,
+            "delete": true,
+            "override_cpus": null,
+            "override_memory_mb": null,
+            "override_storage_mb": null,
+            "override_gpus": null,
+            "suppress_override_warnings": false,
+            "mounts_json": null,
+            "env": {},
+            "kwargs": {}
+        },
+        "verifier": {
+            "override_timeout_sec": null,
+            "max_timeout_sec": null,
+            "env": {},
+            "disable": false
+        },
+        "artifacts": [],
+        "job_id": "369c903f-7799-4358-af20-0d326af1f4db"
+    },
+    "agent_info": {
+        "name": "codex",
+        "version": "0.125.0",
+        "model_info": null
+    },
+    "agent_result": {
+        "n_input_tokens": 24460727,
+        "n_cache_tokens": 24151424,
+        "n_output_tokens": 56484,
+        "cost_usd": null,
+        "rollout_details": null,
+        "metadata": null
+    },
+    "verifier_result": {
+        "rewards": {
+            "reward": 0.0
+        }
+    },
+    "exception_info": {
+        "exception_type": "AgentTimeoutError",
+        "exception_message": "Agent execution timed out after 3600.0 seconds",
+        "exception_traceback": "Traceback (most recent call last):\n  File \"/home/zhaouv/.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/asyncio/tasks.py\", line 520, in wait_for\n    return await fut\n           ^^^^^^^^^\n  File \"/home/zhaouv/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/agents/installed/base.py\", line 42, in wrapper\n    return await fn(self, instruction, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/zhaouv/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/agents/installed/codex.py\", line 712, in run\n    await self.exec_as_agent(\n  File \"/home/zhaouv/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/agents/installed/base.py\", line 366, in exec_as_agent\n    return await self._exec(\n           ^^^^^^^^^^^^^^^^^\n  File \"/home/zhaouv/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/agents/installed/base.py\", line 313, in _exec\n    result = await environment.exec(\n             ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/zhaouv/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/environments/docker/docker.py\", line 496, in exec\n    return await self._run_docker_compose_command(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/zhaouv/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/environments/docker/docker.py\", line 296, in _run_docker_compose_command\n    stdout_bytes, stderr_bytes = await process.communicate()\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/zhaouv/.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/asyncio/subprocess.py\", line 201, in communicate\n    stdin, stdout, stderr = await tasks.gather(stdin, stdout, stderr)\n                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/zhaouv/.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/asyncio/subprocess.py\", line 181, in _read_stream\n    output = await stream.read()\n             ^^^^^^^^^^^^^^^^^^^\n  File \"/home/zhaouv/.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/asyncio/streams.py\", line 706, in read\n    block = await self.read(self._limit)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/zhaouv/.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/asyncio/streams.py\", line 713, in read\n    await self._wait_for_data('read')\n  File \"/home/zhaouv/.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/asyncio/streams.py\", line 545, in _wait_for_data\n    await self._waiter\nasyncio.exceptions.CancelledError\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/home/zhaouv/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/trial/trial.py\", line 360, in _execute_agent\n    await asyncio.wait_for(\n  File \"/home/zhaouv/.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/asyncio/tasks.py\", line 519, in wait_for\n    async with timeouts.timeout(timeout):\n               ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/zhaouv/.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/asyncio/timeouts.py\", line 115, in __aexit__\n    raise TimeoutError from exc_val\nTimeoutError\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/home/zhaouv/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/trial/trial.py\", line 957, in run\n    await self._execute_agent()\n  File \"/home/zhaouv/.local/share/uv/tools/harbor/lib/python3.12/site-packages/harbor/trial/trial.py\", line 369, in _execute_agent\n    raise AgentTimeoutError(\nharbor.trial.trial.AgentTimeoutError: Agent execution timed out after 3600.0 seconds\n",
+        "occurred_at": "2026-04-25T18:01:34.885916"
+    },
+    "started_at": "2026-04-25T09:00:08.702619Z",
+    "finished_at": "2026-04-25T10:07:45.864224Z",
+    "environment_setup": {
+        "started_at": "2026-04-25T09:00:08.756819Z",
+        "finished_at": "2026-04-25T09:00:12.963361Z"
+    },
+    "agent_setup": {
+        "started_at": "2026-04-25T09:00:12.963637Z",
+        "finished_at": "2026-04-25T09:01:34.055199Z"
+    },
+    "agent_execution": {
+        "started_at": "2026-04-25T09:01:34.055500Z",
+        "finished_at": "2026-04-25T10:01:34.857797Z"
+    },
+    "verifier": {
+        "started_at": "2026-04-25T10:01:35.736759Z",
+        "finished_at": "2026-04-25T10:07:31.192172Z"
+    },
+    "step_results": null
+}
