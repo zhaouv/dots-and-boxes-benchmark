@@ -9,6 +9,11 @@
 
 100hgpt55 55% 93hds4p
 100hgpt55 44% 93hds4p
+100hgpt55 48% 93hds4p
+
+93hds4p 58% 72gpt54
+93hds4p 53% 72gpt54
+93hds4p 57% 72gpt54
 
 46ds4p
 
@@ -292,6 +297,43 @@ SampleResult/codex_gpt-5.5_xhigh/rollout-2026-04-25T06-01-33-019dc33a-a1d9-7712-
   所以更准确的总结是：
 
   静态计算负责把候选缩小和提供形状先验，OK-rollout 让它接近满分，不对称 OK/GR rollout 把剩下对 GR 的建模误差补掉。
+
+## 93hds4p
+
+  核心行为
+
+  - 继承 OffensiveKeeperAI，复用它的随机落子、吃分、让分抢先手逻辑：SampleResult/faildemo/2026-04-26__11-05-02/
+    rolloutAI.js:3
+  - 主决策在 where()：
+      - 有立即得分边且还有安全边时，随机吃一条得分边。
+      - 有立即得分边但没有安全边时，进入收官 tryKeepOffensive()。
+      - 没有得分边但有安全边时，进入 safePhaseDecision() 做 rollout。
+      - 连安全边也没有时，按最小连通区域让分：SampleResult/faildemo/2026-04-26__11-05-02/rolloutAI.js:114
+
+  它加了三块东西
+
+  1. 快速模拟器 simFastWhere() / simToEnd()
+     用很便宜的策略把局面模拟到结束：能吃就吃，安全阶段按连通区域抽样走，必须让分就让最小区域：SampleResult/
+     faildemo/2026-04-26__11-05-02/rolloutAI.js:12
+  2. 安全步阶段 rollout
+     safePhaseDecision() 会抽一批 EDGE_NOT 候选，根据剩余安全边数量调整候选数和 rollout 次数，然后模拟终局，用最终分差选
+     边：SampleResult/faildemo/2026-04-26__11-05-02/rolloutAI.js:133
+     它还额外加了“奇偶奖励”：剩余安全边少时，如果走完后 EDGE_NOT 是偶数或 0，就加分，试图抢“最后一个安全步”的节奏：
+     SampleResult/faildemo/2026-04-26__11-05-02/rolloutAI.js:183
+  3. 收官阶段 eat / yield 选择
+     getYieldEdgeForRegion() 尝试为长条、环、L2/R4 这种区域找“让分保先手”的边：SampleResult/faildemo/2026-04-26__11-05-
+     02/rolloutAI.js:51
+     tryKeepOffensive() 在单区域时比较“直接吃”和“让分”的 rollout 分差；多区域时收集吃分边和让分边，少量 rollout 后选分差
+     最高的，但只有让分明显优于吃分时才让：SampleResult/faildemo/2026-04-26__11-05-02/rolloutAI.js:211
+
+  实际效果
+
+  结果里它对 ok 达到了 98%，过了 95% 的公开门槛；但对 gr 只有 91%，没达到 100%，所以 visible gate 失败，hidden eval 没
+  跑：SampleResult/faildemo/2026-04-26__11-05-02/summary.json:6
+
+  主要问题是它把“剩余 EDGE_NOT 数量的奇偶”当成很强信号，但真实局面里一次落子可能把多个 EDGE_NOT 转成 EDGE_WILL，奇偶会被
+  翻转；而且 rollout 里双方都按同一个 simFastWhere() 策略模拟，不是真正模拟 GreedyRandomAI 或强隐藏对手。结果就是能利用
+  一些 OK 的漏洞，但泛化不稳，对 GR 反而会输 9%。
 
 ## faildemo
 
