@@ -16,5 +16,10 @@ RUN chmod +x /usr/local/bin/setup_visible_repo.sh \
     && git config --system --add safe.directory /app
 
 ENV HOME=/home/agent
+ENV NPM_CONFIG_PREFIX=/home/agent/.npm-global
+ENV PATH=/home/agent/.npm-global/bin:$PATH
 USER agent
 WORKDIR /app
+
+RUN npm install -g @anthropic-ai/claude-code@2.1.119 \
+    && npm install -g @openai/codex@0.125.0

@@ -72,6 +72,9 @@ Harbor 官方推荐安装方式：
 ```bash
 uv tool install harbor
 harbor --help
+
+uv tool upgrade harbor
+harbor --version
 ```
 
 ### 1. 导出隐藏评测变量
@@ -90,6 +93,20 @@ eval "$(./scripts/export_hidden_env.sh)"
 
 ```bash
 harbor task start-env -p harbor-datasets/dots-and-boxes-rollout/rollout-6x6-v1 -e docker -a -i
+```
+
+借助代理先手动build出镜像:
+```bash
+PROXY="http://172.25.128.1:1080" 
+docker buildx build --progress=plain --load \
+    --build-arg HTTP_PROXY="$PROXY" \
+    --build-arg HTTPS_PROXY="$PROXY" \
+    --build-arg http_proxy="$PROXY" \
+    --build-arg https_proxy="$PROXY" \
+    --build-arg NO_PROXY="localhost,127.0.0.1" \
+    --build-arg no_proxy="localhost,127.0.0.1" \
+    -t dots-and-boxes-rollout:proxy-build-6x6-v1 \
+    harbor-datasets/dots-and-boxes-rollout/rollout-6x6-v1/environment
 ```
 
 进入容器后，可以手动检查：
@@ -233,6 +250,26 @@ PYTHONPATH="$PWD" harbor run \
 - 这里不要再同时传 `-a claude-code`，否则 Harbor 会优先用内置 agent，忽略 `--agent-import-path`
 - 如果你还需要代理，继续额外传 `--ae HTTPS_PROXY=...` / `--ae HTTP_PROXY=...`
 - 代理地址不要写容器内的 `127.0.0.1`，要写容器能访问到的宿主机地址
+
+```bash
+export ANTHROPIC_API_KEY="xx"
+export ANTHROPIC_BASE_URL="https://api.deepseek.com/anthropic"
+export HTTPS_PROXY=http://172.25.128.1:1080
+export HTTP_PROXY=http://172.25.128.1:1080
+export NO_PROXY=127.0.0.1,localhost
+
+PYTHONPATH="$PWD" harbor run \
+    -y \
+    -p harbor-datasets/dots-and-boxes-rollout/rollout-6x6-highgate-v1 \
+    --agent-import-path harbor_local_agents.claude_code_npm:ClaudeCodeNpm \
+    -m "deepseek-v4-pro" \
+    --ae HTTPS_PROXY="$HTTPS_PROXY" \
+    --ae HTTP_PROXY="$HTTP_PROXY" \
+    --ae NO_PROXY="$NO_PROXY" \
+    --ae ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
+    --ae ANTHROPIC_BASE_URL="$ANTHROPIC_BASE_URL" \
+    --ak reasoning_effort=high
+```
 
 ### 7. 看结果
 

@@ -7,6 +7,8 @@
 
 100hgpt55 91% 72gpt54
 
+46ds4p
+
 ## 100hgpt55
 
 **GOAT**
@@ -288,3 +290,56 @@ SampleResult/codex_gpt-5.5_xhigh/rollout-2026-04-25T06-01-33-019dc33a-a1d9-7712-
 
   静态计算负责把候选缩小和提供形状先验，OK-rollout 让它接近满分，不对称 OK/GR rollout 把剩下对 GR 的建模误差补掉。
 
+## faildemo
+
+$ time node aivsai.bench.js -1 ro -2 br -n 50 -s -o rd4.html
+RolloutAI(先手) vs BenchRolloutAI(后手) 6x6 50局
+结果: RO 49胜 BR 1负
+平均步数: 73
+
+BenchRolloutAI(先手) vs RolloutAI(后手) 6x6 50局
+结果: RO 44胜 BR 6负
+平均步数: 74
+
+综合 100局: RO 93胜 BR 7负 (93%)
+
+录像已保存: rd4.html
+直接在浏览器中打开即可观看
+
+real    0m52.297s
+user    0m53.182s
+sys     0m0.402s
+$ time node aivsai.bench.js -1 ro -2 br -n 50 -s -o r55.html
+RolloutAI(先手) vs BenchRolloutAI(后手) 6x6 50局
+结果: RO 37胜 BR 13负
+平均步数: 73
+
+BenchRolloutAI(先手) vs RolloutAI(后手) 6x6 50局
+结果: RO 39胜 BR 11负
+平均步数: 73
+
+综合 100局: RO 76胜 BR 24负 (76%)
+
+录像已保存: r55.html
+直接在浏览器中打开即可观看
+
+real    2m8.319s
+user    2m8.694s
+sys     0m0.466s
+$ time node aivsai.bench.js -1 ro -2 br -n 50 -s -o r54.html
+RolloutAI(先手) vs BenchRolloutAI(后手) 6x6 50局
+结果: RO 41胜 BR 9负
+平均步数: 72
+
+BenchRolloutAI(先手) vs RolloutAI(后手) 6x6 50局
+结果: RO 38胜 BR 12负
+平均步数: 73
+
+综合 100局: RO 79胜 BR 21负 (79%)
+
+录像已保存: r54.html
+直接在浏览器中打开即可观看
+
+real    0m39.409s
+user    0m39.827s
+sys     0m0.325s
