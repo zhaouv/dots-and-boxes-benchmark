@@ -251,6 +251,23 @@ PYTHONPATH="$PWD" harbor run \
 - 如果你还需要代理，继续额外传 `--ae HTTPS_PROXY=...` / `--ae HTTP_PROXY=...`
 - 代理地址不要写容器内的 `127.0.0.1`，要写容器能访问到的宿主机地址
 
+如果 task 镜像里已经预装了 CLI，也可以直接跳过 Harbor agent 的安装阶段，避免重复下载：
+
+```bash
+PYTHONPATH="$PWD" harbor run \
+  -y \
+  -p harbor-datasets/dots-and-boxes-rollout/rollout-6x6-v1 \
+  --agent-import-path harbor_local_agents.codex_skip_install:CodexSkipInstall \
+  -m gpt-5.4 \
+  --ae OPENAI_API_KEY="$OPENAI_API_KEY"
+```
+
+Claude Code 对应的 import path 是：
+
+```bash
+--agent-import-path harbor_local_agents.claude_code_skip_install:ClaudeCodeSkipInstall
+```
+
 ```bash
 export ANTHROPIC_API_KEY="xx"
 export ANTHROPIC_BASE_URL="https://api.deepseek.com/anthropic"
