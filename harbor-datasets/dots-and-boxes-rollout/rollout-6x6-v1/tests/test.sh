@@ -56,6 +56,38 @@ copy_artifacts() {
     fi
 }
 
+write_reward_json() {
+    REWARD_PATH="$1" node <<'EOF'
+const fs = require('fs')
+
+const rewardPath = process.env.REWARD_PATH
+
+const rewards = {
+  primary_score: Number(process.env.PRIMARY_SCORE || 0),
+  passed_visible_gate: Number(process.env.PASSED_VISIBLE_GATE || 0),
+  hidden_assets_present: Number(process.env.HIDDEN_ASSETS_PRESENT || 0),
+  hidden_eval_ran: Number(process.env.HIDDEN_EVAL_RAN || 0),
+  ok_winrate: Number(process.env.OK_WIN_RATE || 0),
+  ok_wins: Number(process.env.OK_WINS || 0),
+  ok_losses: Number(process.env.OK_LOSSES || 0),
+  ok_total_games: Number(process.env.OK_TOTAL_GAMES || 0),
+  ok_runtime_sec: Number(process.env.OK_RUNTIME_SEC || 0),
+  gr_winrate: Number(process.env.GR_WIN_RATE || 0),
+  gr_wins: Number(process.env.GR_WINS || 0),
+  gr_losses: Number(process.env.GR_LOSSES || 0),
+  gr_total_games: Number(process.env.GR_TOTAL_GAMES || 0),
+  br_winrate: Number(process.env.BR_WIN_RATE || 0),
+  br_wins: Number(process.env.BR_WINS || 0),
+  br_losses: Number(process.env.BR_LOSSES || 0),
+  br_total_games: Number(process.env.BR_TOTAL_GAMES || 0),
+  br_runtime_sec: Number(process.env.BR_RUNTIME_SEC || 0),
+  failed: process.env.FAILURE_REASON ? 1 : 0,
+}
+
+fs.writeFileSync(rewardPath, JSON.stringify(rewards, null, 2))
+EOF
+}
+
 write_summary_json() {
     SUMMARY_PATH="$1" node <<'EOF'
 const fs = require('fs')
@@ -221,7 +253,7 @@ export BR_RUNTIME_SEC="${br_runtime_sec}"
 export FAILURE_REASON="${failure_reason}"
 
 printf '%s\n' "${primary_score}" > "${VERIFIER_DIR}/reward.txt"
-write_summary_json "${VERIFIER_DIR}/reward.json"
-cp "${VERIFIER_DIR}/reward.json" "${ARTIFACT_DIR}/summary.json"
+write_reward_json "${VERIFIER_DIR}/reward.json"
+write_summary_json "${ARTIFACT_DIR}/summary.json"
 
 cat "${VERIFIER_DIR}/reward.json"

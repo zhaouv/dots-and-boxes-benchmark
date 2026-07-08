@@ -21,5 +21,5 @@ ENV PATH=/home/agent/.npm-global/bin:$PATH
 USER agent
 WORKDIR /app
 
-RUN npm install -g @anthropic-ai/claude-code@2.1.119 \
-    && npm install -g @openai/codex@0.125.0
+RUN npm install -g @anthropic-ai/claude-code@2.1.178 \
+    && npm install -g @openai/codex@0.140.0

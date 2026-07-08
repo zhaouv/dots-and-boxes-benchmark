@@ -254,7 +254,7 @@ primary_score = 0
 
 ### 8.2 `/logs/verifier/reward.json`
 
-记录完整指标，例如：
+记录 Harbor 可解析的数值指标。当前 Harbor 会把 `reward.json` 的每个字段当作 reward metric，因此这里不要放 `null` 或字符串；诊断文本放 artifact `summary.json`。
 
 ```json
 {
@@ -267,6 +267,10 @@ primary_score = 0
   "br_runtime_sec": 44.7
 }
 ```
+
+### 8.3 `/logs/artifacts/summary.json`
+
+记录给人看的完整摘要，可以包含 `failure_reason: null` 或具体失败原因字符串，以及其它不适合进入 Harbor reward schema 的诊断信息。
 
 这样 leaderboards 可以按 `primary_score` 排，分析时又能看完整上下文。
 

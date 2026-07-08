@@ -97,7 +97,7 @@ harbor task start-env -p harbor-datasets/dots-and-boxes-rollout/rollout-6x6-v1 -
 
 借助代理先手动build出镜像:
 ```bash
-PROXY="http://172.25.128.1:1080" 
+PROXY="http://172.31.160.1:1080" 
 docker buildx build --progress=plain --load \
     --build-arg HTTP_PROXY="$PROXY" \
     --build-arg HTTPS_PROXY="$PROXY" \
@@ -293,12 +293,13 @@ PYTHONPATH="$PWD" harbor run \
 Harbor 会把 job 结果写到本地 `jobs/` 目录。这个 task 的 verifier 会额外产出：
 
 - `reward.txt`
-- `reward.json`
+- `reward.json`（只包含 Harbor 可解析的数值指标）
 - `rolloutAI.js`
 - `REPORT.md`（如果 agent 写了）
 - `git.diff`
 - `visible_eval.txt`
 - `hidden_eval.txt`
+- `summary.json`（包含 `failure_reason` 等诊断信息）
 
 可以直接开 Harbor viewer：
 
@@ -408,7 +409,7 @@ Results written to jobs/2026-04-24__17-02-18/result.json
 - `ro vs gr` 评测时间：`21.10s`
 - `ro vs br` 评测时间：`40.50s`
 
-这次样例里，公开门槛和隐藏评测都成功完成，`failure_reason = null`，可以作为一个完整跑通的参考基线。
+这次样例里，公开门槛和隐藏评测都成功完成，artifact `summary.json` 里的 `failure_reason = null`，可以作为一个完整跑通的参考基线。
 
 另外，这个 task 当前显式把 Harbor 的 `agent.user` 和 `verifier.user` 设成了 `root`。
 原因不是为了放宽 benchmark 约束，而是为了避免 Docker bind mount 的 `/logs/agent`、`/logs/verifier` 在部分主机上出现写权限问题。
